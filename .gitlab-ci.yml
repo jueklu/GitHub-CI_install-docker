@@ -1,0 +1,23 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  variables: # Variables for SSH
+    IP: "100.26.219.224"
+    USER: "ubuntu"
+  when: manual  # Manually trigger deploy stage
+  before_script:
+    - apk add --no-cache openssh-client # Install OpenSSH Client
+    - chmod og= $ID_RSA # Change permission of SSH Key
+  script:
+    # Update & Upgrade
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $USER@$IP "sudo apt update"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $USER@$IP "sudo apt upgrade -y"
+
+    # Install Docker & Docker Compose
+    - scp -i $ID_RSA -o StrictHostKeyChecking=no scripts/install_docker.sh $USER@$IP:/home/ubuntu/
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $USER@$IP "chmod +x /home/ubuntu/install_docker.sh"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $USER@$IP "/home/ubuntu/install_docker.sh"
+
